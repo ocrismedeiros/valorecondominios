@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Valore Condomínios</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f7f8fa; --bg2:#fff; --bg3:#f0f2f6; --border:#e2e5ec;
+  --text:#1a1e2a; --muted:#7b8399;
+  --juliane:#d97706; --inae:#059669; --pedro:#2563eb; --monica:#db2777;
+  --valore:#7c3aed; --sindico:#94a3b8; --check:#16a34a;
+  --radius:12px; --shadow:0 1px 4px rgba(0,0,0,.07); --shadow-md:0 4px 16px rgba(0,0,0,.10);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Sora',sans-serif;min-height:100vh}
+
+/* ── LOADING ── */
+#loading{position:fixed;inset:0;background:rgba(255,255,255,.9);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2000;gap:16px}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:#1a1e2a;border-radius:50%;animation:spin .7s linear infinite}
+.loading-label{font-size:13px;color:var(--muted);font-family:'DM Mono',monospace}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── LOGIN ── */
+#screen-login{min-height:100vh;display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;background:linear-gradient(135deg,#f0f2f6 0%,#e8edf5 100%)}
+.login-logo{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.login-icon{width:48px;height:48px;background:#1a1e2a;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px}
+.login-title{font-size:24px;font-weight:800;letter-spacing:-.5px}
+.login-sub{font-size:12px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:36px;text-align:center;line-height:1.8}
+.login-section-label{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:12px;align-self:flex-start;max-width:720px;width:100%}
+.login-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;width:100%;max-width:720px;margin-bottom:12px}
+.login-card{background:#fff;border:2px solid var(--border);border-radius:14px;padding:22px 16px;text-align:center;cursor:pointer;transition:all .2s;box-shadow:var(--shadow)}
+.login-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-md)}
+.login-card .lc-emoji{font-size:34px;margin-bottom:8px}
+.login-card .lc-name{font-size:16px;font-weight:700;margin-bottom:4px}
+.login-card .lc-role{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace}
+.login-card[data-user="juliane"]:hover{border-color:var(--juliane)}.login-card[data-user="inae"]:hover{border-color:var(--inae)}
+.login-card[data-user="pedro"]:hover{border-color:var(--pedro)}.login-card[data-user="monica"]:hover{border-color:var(--monica)}
+.login-card.gestor-card{background:#1a1e2a;border-color:#1a1e2a;color:#fff;grid-column:1/-1;max-width:300px;margin:0 auto;width:100%}
+.login-card.gestor-card .lc-role{color:#9ca3af}
+.login-card.gestor-card:hover{background:#2d3244;border-color:#2d3244}
+
+/* ── SETUP ── */
+#screen-setup{min-height:100vh;display:none;align-items:center;justify-content:center;padding:24px}
+.setup-box{max-width:640px;width:100%;background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:32px;box-shadow:var(--shadow-md)}
+.setup-box h2{font-size:20px;font-weight:700;margin-bottom:8px}
+.setup-box p{font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6}
+.setup-step{display:flex;gap:12px;margin-bottom:14px;align-items:flex-start}
+.step-num{width:24px;height:24px;background:#1a1e2a;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:2px}
+.step-text{font-size:13px;line-height:1.6}
+.sql-block{background:#1a1e2a;color:#e2e8f0;font-family:'DM Mono',monospace;font-size:11px;padding:16px;border-radius:8px;margin:14px 0;white-space:pre;overflow-x:auto;line-height:1.7}
+.btn-primary{background:#1a1e2a;color:#fff;border:none;padding:12px 24px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Sora',sans-serif;transition:background .15s}
+.btn-primary:hover{background:#2d3244}
+
+/* ── APP HEADER ── */
+#screen-app{display:none}
+.app-header{background:#fff;border-bottom:1px solid var(--border);padding:0 20px;display:flex;align-items:center;gap:16px;height:60px;position:sticky;top:0;z-index:100;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.app-header-logo{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.app-header-icon{width:32px;height:32px;background:#1a1e2a;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.app-header-title{font-size:15px;font-weight:700;white-space:nowrap}
+.app-header-month{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace}
+.rt-indicator{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.rt-dot{width:8px;height:8px;border-radius:50%;background:#16a34a;animation:pulse 2s infinite}
+.rt-label{font-size:10px;color:#16a34a;font-family:'DM Mono',monospace;white-space:nowrap}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.user-chip{display:flex;align-items:center;gap:7px;padding:6px 12px;border-radius:20px;border:1.5px solid var(--border);background:#fff;cursor:pointer;transition:all .15s;font-size:12.5px;font-weight:600;white-space:nowrap;flex-shrink:0}
+.user-chip:hover{border-color:#c5cadc}
+.user-chip-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.chip-exit{font-size:11px;color:var(--muted)}
+
+/* ── NAV ── */
+.nav-wrap{max-width:1200px;margin:16px auto 0;padding:0 16px}
+.main-nav{display:flex;gap:4px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:4px;width:fit-content}
+.nav-btn{padding:8px 18px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-size:13px;font-weight:600;font-family:'Sora',sans-serif;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:7px;white-space:nowrap}
+.nav-btn:hover{background:#fff;color:var(--text)}
+.nav-btn.active{background:#fff;color:var(--text);box-shadow:var(--shadow)}
+
+/* ── CONTENT ── */
+.content{max-width:1200px;margin:20px auto 0;padding:0 16px 64px}
+
+/* ── LEADERBOARD ── */
+.leaderboard{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-bottom:24px}
+.lb-card{background:#fff;border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 16px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow);cursor:pointer;transition:all .15s}
+.lb-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.lb-card.rank-1{border-color:#fbbf24}.lb-card.rank-2{border-color:#94a3b8}.lb-card.rank-3{border-color:#b45309}
+.lb-rank{font-size:20px;width:26px;text-align:center;flex-shrink:0}
+.lb-emoji{font-size:22px;flex-shrink:0}
+.lb-info{flex:1;min-width:0}
+.lb-name{font-size:13px;font-weight:700}
+.lb-lv{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin:2px 0 5px}
+.lb-bar-wrap{height:4px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.lb-bar{height:100%;border-radius:2px;transition:width .6s ease}
+.lb-pct{font-size:20px;font-weight:800;font-family:'DM Mono',monospace;flex-shrink:0}
+
+/* ── FILTERS ── */
+.filter-block{margin-bottom:8px}
+.fgl{font-size:10px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:8px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.tab{padding:7px 15px;border-radius:6px;border:1.5px solid var(--border);background:#fff;color:var(--muted);font-size:12.5px;font-weight:500;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:7px;box-shadow:var(--shadow)}
+.tab:hover{border-color:#c5cadc;color:var(--text)}
+.tab.active{color:#fff!important;border-color:transparent!important}
+.tab .dot{width:8px;height:8px;border-radius:50%}
+.tab .cnt{background:rgba(0,0,0,.12);border-radius:4px;padding:1px 6px;font-size:10px;font-family:'DM Mono',monospace}
+
+/* ── COLLAB HEADER ── */
+.collab-section{margin-bottom:32px}
+.collab-header-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;box-shadow:var(--shadow);margin-bottom:14px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;position:relative;overflow:hidden}
+.collab-header-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent)}
+.ring-wrap{position:relative;flex-shrink:0;width:80px;height:80px}
+.ring-emoji{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:26px}
+.c-info{flex:1;min-width:160px}
+.c-name{font-size:18px;font-weight:800;margin-bottom:4px}
+.c-lvbadge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;margin-bottom:8px}
+.xp-row{display:flex;justify-content:space-between;margin-bottom:4px}
+.xp-lbl{font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)}
+.xp-val{font-size:13px;font-weight:700;font-family:'DM Mono',monospace}
+.xp-bar-wrap{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-bottom:3px}
+.xp-bar-fill{height:100%;border-radius:3px;transition:width .6s ease;background:var(--accent)}
+.xp-next{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace}
+.c-stats{display:flex;gap:20px;flex-shrink:0}
+.stat-box{text-align:center}
+.stat-num{font-size:24px;font-weight:800;font-family:'DM Mono',monospace;line-height:1;color:var(--accent)}
+.stat-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.badges-row{display:flex;flex-wrap:wrap;gap:6px;width:100%;margin-top:6px}
+.badge-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:600;background:var(--bg3);border:1px solid var(--border);animation:bpop .3s ease}
+@keyframes bpop{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
+
+/* ── TASKS ── */
+.tasks-body{display:flex;flex-direction:column;gap:10px}
+.month-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.month-card-hdr{padding:12px 18px;display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#ede9fe,#f5f3ff);border-bottom:1px solid #ddd6fe}
+.month-card-title{font-size:13px;font-weight:700;color:#5b21b6}
+.month-card-status{font-size:10px;color:#7c3aed;font-family:'DM Mono',monospace;margin-left:auto}
+.month-card-body{padding:12px 18px}
+.weeks-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.week-card{background:#fff;border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);transition:box-shadow .15s}
+.week-card.is-current{border-color:#93c5fd;box-shadow:0 0 0 3px rgba(59,130,246,.08),var(--shadow)}
+.week-card.is-done{border-color:#86efac}
+.week-hdr{padding:12px 14px;cursor:pointer;user-select:none;transition:background .1s;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.week-hdr:hover{background:var(--bg3)}
+.week-title{font-size:13px;font-weight:700;flex:1}
+.week-range{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;width:100%}
+.wsbadge{font-size:9px;padding:2px 7px;border-radius:10px;font-weight:600;font-family:'DM Mono',monospace;white-space:nowrap}
+.wsb-current{background:#dbeafe;color:#1d4ed8}.wsb-done{background:#dcfce7;color:#15803d}
+.wsb-future{background:var(--bg3);color:var(--muted)}.wsb-past{background:#fef3c7;color:#92400e}
+.week-score{font-size:12px;font-weight:700;font-family:'DM Mono',monospace;flex-shrink:0}
+.week-body{padding:10px 14px;border-top:1px solid var(--border)}
+.week-body.collapsed{display:none}
+.wpbar-wrap{height:3px;background:var(--bg3);border-radius:2px;margin-top:10px;overflow:hidden}
+.wpbar{height:100%;border-radius:2px;transition:width .3s;background:var(--accent)}
+.task-item{display:flex;align-items:center;gap:9px;cursor:pointer;padding:6px 8px;border-radius:7px;transition:background .1s;user-select:none;margin-bottom:4px}
+.task-item:last-of-type{margin-bottom:0}
+.task-item:hover{background:var(--bg3)}
+.task-item.readonly{cursor:not-allowed;opacity:.75}
+.task-item.readonly:hover{background:transparent}
+.tcb{width:17px;height:17px;border:1.5px solid var(--border);border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;background:var(--bg)}
+.task-item.done .tcb{background:var(--check);border-color:var(--check)}
+.task-item.done .tcb::after{content:'✓';color:#fff;font-size:10px;font-weight:800}
+.ticon{font-size:13px;flex-shrink:0}
+.tlabel{font-size:12px;color:var(--muted);transition:all .15s;flex:1}
+.task-item.done .tlabel{color:var(--text);text-decoration:line-through;text-decoration-color:#aaa}
+.txp{font-size:9px;font-family:'DM Mono',monospace;color:#10b981;opacity:0;transition:opacity .2s;font-weight:600}
+.task-item:not(.readonly):hover .txp{opacity:1}
+.task-item.done .txp{opacity:0!important}
+
+/* ── GESTOR VIEW ── */
+.gestor-panel{background:#fff;border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:20px}
+.gestor-panel-hdr{padding:16px 20px;background:#1a1e2a;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.gph-title{font-size:14px;font-weight:700;color:#fff;flex:1}
+.gph-live{display:flex;align-items:center;gap:6px}
+.gph-dot{width:7px;height:7px;border-radius:50%;background:#22c55e;animation:pulse 2s infinite}
+.gph-label{font-size:10px;color:#22c55e;font-family:'DM Mono',monospace}
+.gph-time{font-size:10px;color:#9ca3af;font-family:'DM Mono',monospace;margin-left:auto}
+.gestor-table{width:100%;border-collapse:collapse}
+.gestor-table th{padding:10px 14px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);background:var(--bg3);border-bottom:1px solid var(--border);text-align:center;white-space:nowrap}
+.gestor-table th:first-child{text-align:left}
+.gestor-table td{padding:14px;border-bottom:1px solid var(--border);text-align:center;font-size:13px;vertical-align:middle}
+.gestor-table td:first-child{text-align:left;padding-left:20px}
+.gestor-table tr:last-child td{border-bottom:none}
+.gestor-table tbody tr:hover td{background:var(--bg3)}
+.cn-cell{display:flex;align-items:center;gap:10px}
+.cn-emoji{font-size:20px}
+.cn-name{font-size:14px;font-weight:700}
+.cn-lv{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace}
+.wchip{display:inline-block;font-size:11px;font-family:'DM Mono',monospace;padding:3px 9px;border-radius:6px;font-weight:600;min-width:42px}
+.wc-done{background:#dcfce7;color:#15803d}
+.wc-partial{background:#fef3c7;color:#92400e}
+.wc-empty{background:var(--bg3);color:var(--muted)}
+.sem{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700}
+.sem-green{background:#dcfce7;color:#15803d}
+.sem-yellow{background:#fef3c7;color:#92400e}
+.sem-red{background:#fee2e2;color:#dc2626}
+.gbar-row{padding:12px 20px;border-top:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.gbar-name{font-size:12px;font-weight:600;width:80px;flex-shrink:0}
+.gbar-wrap{flex:1;height:8px;background:var(--bg3);border-radius:4px;overflow:hidden}
+.gbar-fill{height:100%;border-radius:4px;transition:width .5s ease}
+.gbar-pct{font-size:13px;font-weight:800;font-family:'DM Mono',monospace;width:40px;text-align:right;flex-shrink:0}
+
+/* ── CARTEIRA ── */
+.legend{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:12px 18px;display:flex;flex-wrap:wrap;gap:18px;align-items:center;box-shadow:var(--shadow);margin-bottom:18px}
+.legend-title{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.5px}
+.legend-items{display:flex;flex-wrap:wrap;gap:14px}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
+.ldot{width:8px;height:8px;border-radius:3px}
+.section{margin-bottom:32px}
+.section-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:10px;border-bottom:1.5px solid var(--border)}
+.section-pill{padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;color:#fff}
+.section-meta{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-left:auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(272px,1fr));gap:12px}
+.ccard{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:box-shadow .15s,border-color .15s}
+.ccard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent)}
+.ccard:hover{box-shadow:var(--shadow-md);border-color:#c5cadc}
+.ccard-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:11px;gap:8px}
+.ccard-name{font-size:13.5px;font-weight:600}
+.ccard-badges{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.cbadge{font-size:10px;font-family:'DM Mono',monospace;padding:3px 7px;border-radius:4px;white-space:nowrap;font-weight:500}
+.cb-valore{background:#ede9fe;color:#6d28d9;border:1px solid #ddd6fe}
+.cb-sindico{background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0}
+.cb-apedro{background:#dbeafe;color:#1d4ed8;border:1px solid #bfdbfe}
+.cb-acristiano{background:#ede9fe;color:#6d28d9;border:1px solid #ddd6fe}
+.cb-amonica{background:#fce7f3;color:#be185d;border:1px solid #fbcfe8}
+.ctasks{display:flex;flex-direction:column;gap:5px}
+.ctask{display:flex;align-items:center;gap:8px;cursor:pointer;padding:5px 7px;border-radius:6px;transition:background .1s;user-select:none}
+.ctask:hover{background:var(--bg3)}
+.ctask.readonly{cursor:not-allowed;opacity:.75}
+.ctask.readonly:hover{background:transparent}
+.ccb{width:16px;height:16px;border:1.5px solid var(--border);border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;background:var(--bg)}
+.ctask.done .ccb{background:var(--check);border-color:var(--check)}
+.ctask.done .ccb::after{content:'✓';color:#fff;font-size:10px;font-weight:700}
+.ctask-label{font-size:11px;color:var(--muted)}
+.ctask.done .ctask-label{color:var(--text);text-decoration:line-through;text-decoration-color:#aaa}
+.cpbar-wrap{margin-top:11px}
+.cpbar-label{display:flex;justify-content:space-between;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);margin-bottom:4px}
+.cpbar{height:3px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.cpbar-fill{height:100%;border-radius:2px;transition:width .3s;background:var(--accent)}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:8px;font-size:13px;font-weight:500;z-index:9999;animation:toastIn .2s ease,toastOut .2s ease 2.3s forwards;pointer-events:none;white-space:nowrap}
+.toast-info{background:#1a1e2a;color:#fff}
+.toast-error{background:#dc2626;color:#fff}
+.toast-success{background:#16a34a;color:#fff}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+@keyframes toastOut{from{opacity:1}to{opacity:0}}
+
+/* ── CONFETTI ── */
+.confetti-c{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;overflow:hidden}
+.cp{position:absolute;top:-12px;animation:cfall linear forwards}
+@keyframes cfall{0%{top:-5%;opacity:1;transform:rotate(0)}80%{opacity:1}100%{top:106%;opacity:0;transform:rotate(720deg)}}
+.xp-float{position:fixed;font-size:13px;font-weight:700;color:#10b981;font-family:'DM Mono',monospace;pointer-events:none;z-index:9998;animation:xpf 1.4s ease forwards}
+@keyframes xpf{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-36px)}}
+
+.empty-state{padding:48px;text-align:center;color:var(--muted);font-size:13px;font-family:'DM Mono',monospace;background:#fff;border:1px solid var(--border);border-radius:var(--radius)}
+
+@media(max-width:700px){
+  .app-header-title,.app-header-month{display:none}
+  .weeks-grid,.grid{grid-template-columns:1fr}
+  .leaderboard{grid-template-columns:repeat(2,1fr)}
+  .gestor-table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading">
+  <div class="spinner"></div>
+  <div class="loading-label">Conectando ao banco de dados...</div>
+</div>
+
+<!-- LOGIN -->
+<div id="screen-login">
+  <div class="login-logo">
+    <div class="login-icon">🏢</div>
+    <div class="login-title">Valore Condomínios</div>
+  </div>
+  <div class="login-sub">Controle Mensal · ERP Superlógica<br>Selecione seu perfil para entrar</div>
+  <div class="login-section-label">Colaboradores</div>
+  <div class="login-grid">
+    <div class="login-card" data-user="juliane"><div class="lc-emoji">🌸</div><div class="lc-name">Juliane</div><div class="lc-role">14 condomínios</div></div>
+    <div class="login-card" data-user="inae"><div class="lc-emoji">🌿</div><div class="lc-name">Inae</div><div class="lc-role">11 condomínios</div></div>
+    <div class="login-card" data-user="pedro"><div class="lc-emoji">⚡</div><div class="lc-name">Pedro</div><div class="lc-role">8 condomínios</div></div>
+    <div class="login-card" data-user="monica"><div class="lc-emoji">💫</div><div class="lc-name">Monica</div><div class="lc-role">8 condomínios</div></div>
+  </div>
+  <div class="login-section-label">Gestão</div>
+  <div class="login-grid" style="max-width:320px">
+    <div class="login-card gestor-card" data-user="gestor"><div class="lc-emoji">🎯</div><div class="lc-name">Visão Gestor</div><div class="lc-role">Painel em tempo real</div></div>
+  </div>
+</div>
+
+<!-- SETUP -->
+<div id="screen-setup">
+  <div class="setup-box">
+    <h2>⚙️ Setup inicial — Banco de Dados</h2>
+    <p>Antes de usar, precisa criar a tabela no Supabase. Execute o SQL abaixo no <strong>SQL Editor</strong> do seu projeto e depois clique em "Verificar".</p>
+    <div class="setup-step"><div class="step-num">1</div><div class="step-text">Acesse <strong>supabase.com → seu projeto → SQL Editor → New query</strong></div></div>
+    <div class="setup-step"><div class="step-num">2</div><div class="step-text">Cole e execute o SQL abaixo clicando em <strong>RUN</strong>:</div></div>
+    <div class="sql-block">CREATE TABLE IF NOT EXISTS task_completions (
+  id           uuid        DEFAULT gen_random_uuid() PRIMARY KEY,
+  collaborator text        NOT NULL,
+  task_key     text        NOT NULL,
+  month_year   text        NOT NULL,
+  done         boolean     DEFAULT false,
+  completed_at timestamptz,
+  updated_at   timestamptz DEFAULT now(),
+  UNIQUE(collaborator, task_key, month_year)
+);
+
+ALTER TABLE task_completions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "public_access" ON task_completions
+  FOR ALL TO anon USING (true) WITH CHECK (true);
+
+ALTER publication supabase_realtime ADD TABLE task_completions;</div>
+    <div class="setup-step"><div class="step-num">3</div><div class="step-text">Aguarde "Success" e clique abaixo:</div></div>
+    <button class="btn-primary" onclick="checkSetup()">✓ Verificar e continuar</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="screen-app">
+  <div class="app-header">
+    <div class="app-header-logo">
+      <div class="app-header-icon">🏢</div>
+      <div>
+        <div class="app-header-title">Valore Condomínios</div>
+        <div class="app-header-month" id="header-month"></div>
+      </div>
+    </div>
+    <div class="rt-indicator"><div class="rt-dot"></div><span class="rt-label">Ao vivo</span></div>
+    <div class="user-chip" onclick="logout()">
+      <div class="user-chip-dot" id="uchip-dot"></div>
+      <span id="uchip-name"></span>
+      <span class="chip-exit">· Sair</span>
+    </div>
+  </div>
+  <div class="nav-wrap">
+    <div class="main-nav" id="main-nav">
+      <button class="nav-btn active" data-view="tarefas">📋 Tarefas</button>
+      <button class="nav-btn" data-view="carteira">🏢 Carteira</button>
+      <button class="nav-btn" id="nav-gestor" data-view="gestor" style="display:none">🎯 Gestor</button>
+    </div>
+  </div>
+  <div class="content" id="app-content"></div>
+</div>
+
+<div class="confetti-c" id="cc"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════
+// INIT SUPABASE
+// ═══════════════════════════════════════════════════════
+const SUPA_URL = 'https://njmfsmqsvtlkcdgamxih.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5qbWZzbXFzdnRsa2NkZ2FteGloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNzM0NzAsImV4cCI6MjA4OTg0OTQ3MH0.uVAt8ucvBAK_cWrbTvKGwONYArPQ1hODt5JAxvpPRTs';
+const { createClient } = supabase;
+const db = createClient(SUPA_URL, SUPA_KEY);
+
+// ═══════════════════════════════════════════════════════
+// DATE & MONTH
+// ═══════════════════════════════════════════════════════
+const TODAY    = new Date();
+const CUR_YEAR = TODAY.getFullYear();
+const CUR_MON  = TODAY.getMonth();
+const CUR_DAY  = TODAY.getDate();
+const MY_KEY   = `${CUR_YEAR}-${String(CUR_MON+1).padStart(2,'0')}`;
+const MESES    = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const MON_NAME = MESES[CUR_MON];
+document.getElementById('header-month').textContent = `${MON_NAME} ${CUR_YEAR}`;
+
+// ═══════════════════════════════════════════════════════
+// STATIC DATA
+// ═══════════════════════════════════════════════════════
+const COLLABS = {
+  juliane:{ nome:'Juliane', emoji:'🌸', cor:'#d97706', condos:['Açores','Alcebíades Seara','América','Helena','Lisboa','Lola Farias','Mariskão','Milara','Natureza','Palazzo','Solaris','Veneza','Vila do Porto','Torre del Sole']},
+  inae:   { nome:'Inae',    emoji:'🌿', cor:'#059669', condos:['Arco do Triunfo','Auradri','Domus','Eldorado Med Center','Francisco Leonardeli Neto','João Basso','Lexus','Margaux','Palladio','Resumo Residence','Vila de Sintra']},
+  pedro:  { nome:'Pedro',   emoji:'⚡', cor:'#2563eb', condos:['Alta Cittá','Bela Vista','Green River','Joelcia','VEGA','Vittá','Jerônimo Medeiros','Arina Ghellere']},
+  monica: { nome:'Monica',  emoji:'💫', cor:'#db2777', condos:['Solar das Avenidas','Arthur Residence','Avenida Park','Dona Almira','Dona Rosa','Elisabete','Firenze','Santos']},
+};
+const CIDS = ['juliane','inae','pedro','monica'];
+
+const VALORE_SET = new Set(['Alcebíades Seara','América','Helena','Lisboa','Mariskão','Natureza','Palazzo','Solaris','Vila do Porto','Arco do Triunfo','Auradri','Eldorado Med Center','Francisco Leonardeli Neto','Lexus','Margaux','Palladio','Resumo Residence','Vila de Sintra','Alta Cittá','Green River','Joelcia','VEGA','Vittá','Arthur Residence','Dona Rosa','Elisabete','Santos','Solar das Avenidas']);
+const AGEND = {
+  pedro:    ['América','Helena','Natureza','Palazzo','Vila do Porto','Francisco Leonardeli Neto','Alta Cittá','Green River','Joelcia','VEGA','Vittá','Arthur Residence','Dona Rosa','Elisabete','Santos'],
+  cristiano:['Alcebíades Seara','Lisboa','Mariskão','Solaris','Arco do Triunfo','Auradri','Eldorado Med Center','Lexus','Margaux','Palladio','Resumo Residence','Vila de Sintra'],
+  monica:   ['Solar das Avenidas'],
+};
+const AGEND_LU = {};
+Object.entries(AGEND).forEach(([r,l]) => l.forEach(n => AGEND_LU[n]=r));
+const AGEND_CFG = {
+  pedro:{cls:'cb-apedro',lbl:'Agenda: Pedro'},
+  cristiano:{cls:'cb-acristiano',lbl:'Agenda: Cristiano'},
+  monica:{cls:'cb-amonica',lbl:'Agenda: Monica'},
+};
+const CARTEIRA_TASKS = [
+  {id:'sep', icon:'📂', label:'Separar docs para agendamento'},
+  {id:'lanc',icon:'📝', label:'Lançar despesas no ERP'},
+  {id:'cobr',icon:'📋', label:'Cobrar notas/recibos do síndico'},
+  {id:'conc',icon:'🔄', label:'Conciliação bancária'},
+];
+const WEEKLY_TASKS = [
+  {id:'lanc',icon:'📝', label:'Lançar despesas no ERP'},
+  {id:'cobr',icon:'📋', label:'Cobrar notas/recibos do síndico'},
+  {id:'conc',icon:'🔄', label:'Conciliação bancária'},
+];
+
+// ═══════════════════════════════════════════════════════
+// WEEKS
+// ═══════════════════════════════════════════════════════
+function getWeeks(y,m){
+  const dim=new Date(y,m+1,0).getDate(), wks=[];
+  let d=1,n=1;
+  while(d<=dim){ const e=Math.min(d+6,dim); wks.push({num:n,start:d,end:e,range:`${d}–${e} de ${MON_NAME}`}); d+=7;n++; }
+  return wks;
+}
+const WEEKS   = getWeeks(CUR_YEAR,CUR_MON);
+const CUR_WK  = (()=>{ for(const w of WEEKS) if(CUR_DAY>=w.start&&CUR_DAY<=w.end) return w.num; return WEEKS[WEEKS.length-1].num; })();
+const TOTAL_T = 1 + WEEKS.length * WEEKLY_TASKS.length;
+
+// ═══════════════════════════════════════════════════════
+// GAMIFICATION
+// ═══════════════════════════════════════════════════════
+const XP_T=25, XP_WK=30, XP_MO=100;
+const LEVELS=[
+  {min:0,   name:'Novato',       icon:'🌱', color:'#64748b', bg:'#f1f5f9'},
+  {min:130, name:'Focado',       icon:'⚡', color:'#d97706', bg:'#fef3c7'},
+  {min:300, name:'Consistente',  icon:'🌟', color:'#059669', bg:'#d1fae5'},
+  {min:500, name:'Especialista', icon:'💎', color:'#2563eb', bg:'#dbeafe'},
+  {min:730, name:'Lendário',     icon:'👑', color:'#7c3aed', bg:'#ede9fe'},
+];
+const getLv    = xp => { let l=LEVELS[0]; LEVELS.forEach(x=>{if(xp>=x.min)l=x;}); return l; };
+const getLvIdx = xp => { let i=0; LEVELS.forEach((l,j)=>{if(xp>=l.min)i=j;}); return i; };
+const getXPPct = xp => { const i=getLvIdx(xp),c=LEVELS[i],n=LEVELS[i+1]; return n?Math.round(((xp-c.min)/(n.min-c.min))*100):100; };
+const getNextXP= xp => { const n=LEVELS[getLvIdx(xp)+1]; return n?n.min-xp:0; };
+
+// ═══════════════════════════════════════════════════════
+// IN-MEMORY CACHE
+// ═══════════════════════════════════════════════════════
+const TC={}, CC2={};  // TC = task cache, CC2 = carteira cache
+CIDS.forEach(id=>{TC[id]={};CC2[id]={};});
+
+const normKey = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'_');
+const ctKey   = (condo,tid) => `crt_${normKey(condo)}_${tid}`;
+
+const isDone  = (c,k)  => !!(TC[c]?.[k]?.done);
+const isCDone = (c,k)  => !!(CC2[c]?.[k]?.done);
+
+function calcXP(c){
+  let xp=0,done=0;
+  if(isDone(c,'month_sep')){xp+=XP_T;done++;}
+  WEEKS.forEach(w=>{
+    let wd=0;
+    WEEKLY_TASKS.forEach(t=>{if(isDone(c,`week_${w.num}_${t.id}`)){xp+=XP_T;wd++;done++;}});
+    if(wd===WEEKLY_TASKS.length) xp+=XP_WK;
+  });
+  if(done===TOTAL_T) xp+=XP_MO;
+  return xp;
+}
+function calcComp(c){
+  let done=isDone(c,'month_sep')?1:0;
+  WEEKS.forEach(w=>WEEKLY_TASKS.forEach(t=>{if(isDone(c,`week_${w.num}_${t.id}`))done++;}));
+  return {done,total:TOTAL_T,pct:Math.round((done/TOTAL_T)*100)};
+}
+function calcCtComp(c,name){
+  const done=CARTEIRA_TASKS.filter(t=>isCDone(c,ctKey(name,t.id))).length;
+  return {done,total:CARTEIRA_TASKS.length,pct:Math.round((done/CARTEIRA_TASKS.length)*100)};
+}
+function wkDone(c,n){ return WEEKLY_TASKS.every(t=>isDone(c,`week_${n}_${t.id}`)); }
+function getBadges(c){
+  const b=[];
+  if(isDone(c,'month_sep')) b.push({icon:'🌅',label:'Mês Iniciado'});
+  let cons=0,max=0;
+  WEEKS.forEach(w=>{
+    if(wkDone(c,w.num)){b.push({icon:'⭐',label:`Sem.${w.num} Perfeita`});cons++;max=Math.max(max,cons);}
+    else cons=0;
+  });
+  if(max>=2) b.push({icon:'🔥',label:'Em Chamas'});
+  if(max>=3) b.push({icon:'💥',label:'Imparável'});
+  if(calcComp(c).pct===100) b.push({icon:'🏆',label:'Mês Impecável!'});
+  return b;
+}
+
+// ═══════════════════════════════════════════════════════
+// SUPABASE DATA LAYER
+// ═══════════════════════════════════════════════════════
+async function loadAll(){
+  const {data,error}=await db.from('task_completions').select('*').eq('month_year',MY_KEY);
+  if(error){console.error(error);return;}
+  CIDS.forEach(id=>{TC[id]={};CC2[id]={};});
+  data.forEach(r=>{
+    const isCrt=r.task_key.startsWith('crt_');
+    const cache=isCrt?CC2:TC;
+    if(!cache[r.collaborator]) cache[r.collaborator]={};
+    cache[r.collaborator][r.task_key]={done:r.done,completed_at:r.completed_at};
+  });
+}
+
+async function toggle(col,key,isCarteira){
+  const cache=isCarteira?CC2:TC;
+  if(!cache[col]) cache[col]={};
+  const prev=!!(cache[col][key]?.done);
+  const next=!prev;
+  const now=new Date().toISOString();
+  cache[col][key]={done:next,completed_at:next?now:null}; // optimistic
+  const {error}=await db.from('task_completions').upsert(
+    {collaborator:col,task_key:key,month_year:MY_KEY,done:next,completed_at:next?now:null,updated_at:now},
+    {onConflict:'collaborator,task_key,month_year'}
+  );
+  if(error){
+    cache[col][key]={done:prev}; // revert
+    toast('Erro ao salvar. Tente novamente.','error');
+    return false;
+  }
+  lastRT={who:col,when:new Date()};
+  return true;
+}
+
+// ═══════════════════════════════════════════════════════
+// REALTIME
+// ═══════════════════════════════════════════════════════
+let lastRT={who:null,when:null};
+function startRealtime(){
+  db.channel('valore_rt')
+    .on('postgres_changes',{event:'*',schema:'public',table:'task_completions'},payload=>{
+      const r=payload.new||payload.old;
+      if(!r||r.month_year!==MY_KEY) return;
+      const isCrt=r.task_key.startsWith('crt_');
+      const cache=isCrt?CC2:TC;
+      if(!cache[r.collaborator]) cache[r.collaborator]={};
+      if(payload.eventType==='DELETE') delete cache[r.collaborator][r.task_key];
+      else cache[r.collaborator][r.task_key]={done:r.done,completed_at:r.completed_at};
+      lastRT={who:r.collaborator,when:new Date()};
+      rerender();
+    })
+    .subscribe();
+}
+function rerender(){
+  if(CUR_VIEW==='tarefas'){renderLB();renderTarefas();}
+  else if(CUR_VIEW==='carteira') renderCarteira();
+  else if(CUR_VIEW==='gestor') renderGestor();
+}
+
+// ═══════════════════════════════════════════════════════
+// UI STATE
+// ═══════════════════════════════════════════════════════
+let CUR_USER=null, CUR_VIEW='tarefas';
+let FLT_COL='all', FLT_CART='all', FLT_AGEND='all';
+const WK_EXP={};
+
+function logout(){
+  CUR_USER=null;
+  document.getElementById('screen-app').style.display='none';
+  document.getElementById('screen-login').style.display='flex';
+}
+
+// ═══════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════
+function toast(msg,type='info'){
+  document.querySelectorAll('.toast').forEach(e=>e.remove());
+  const t=document.createElement('div');
+  t.className=`toast toast-${type}`;
+  t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(),2700);
+}
+const CC3=['#fbbf24','#34d399','#60a5fa','#f472b6','#a78bfa','#f97316','#22c55e'];
+function confetti(n=60){
+  const c=document.getElementById('cc');c.innerHTML='';
+  for(let i=0;i<n;i++){
+    const el=document.createElement('div');el.className='cp';
+    const sz=7+Math.random()*9;
+    el.style.cssText=`left:${Math.random()*100}%;width:${sz}px;height:${sz}px;background:${CC3[i%CC3.length]};border-radius:${Math.random()>.5?'50%':'3px'};animation-duration:${1.8+Math.random()*1.8}s;animation-delay:${Math.random()*.4}s`;
+    c.appendChild(el);el.addEventListener('animationend',()=>el.remove());
+  }
+}
+function floatXP(el){
+  const r=el.getBoundingClientRect(),f=document.createElement('div');
+  f.className='xp-float';f.textContent=`+${XP_T} XP`;
+  f.style.left=(r.right+6)+'px';f.style.top=(r.top+window.scrollY-4)+'px';
+  document.body.appendChild(f);f.addEventListener('animationend',()=>f.remove());
+}
+function svgRing(pct,color,size=80){
+  const r=32,cx=size/2,cy=size/2,circ=2*Math.PI*r,dash=(pct/100)*circ;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#e8ecf0" stroke-width="6"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="6"
+      stroke-dasharray="${dash} ${circ}" stroke-dashoffset="${circ/4}" stroke-linecap="round"/>
+  </svg>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// RENDER LEADERBOARD
+// ═══════════════════════════════════════════════════════
+function renderLB(){
+  const el=document.getElementById('lb'); if(!el) return;
+  const board=CIDS.map(id=>{const{pct}=calcComp(id),xp=calcXP(id);return{id,pct,xp,lv:getLv(xp)};})
+    .sort((a,b)=>b.pct-a.pct||b.xp-a.xp);
+  const md=['🥇','🥈','🥉','4️⃣'];
+  el.innerHTML=board.map((item,i)=>{
+    const col=COLLABS[item.id];
+    return `<div class="lb-card rank-${i+1}" data-jump="${item.id}">
+      <div class="lb-rank">${md[i]}</div><div class="lb-emoji">${col.emoji}</div>
+      <div class="lb-info">
+        <div class="lb-name">${col.nome}</div>
+        <div class="lb-lv">${item.lv.icon} ${item.lv.name} · ${item.xp} XP</div>
+        <div class="lb-bar-wrap"><div class="lb-bar" style="width:${item.pct}%;background:${col.cor}"></div></div>
+      </div>
+      <div class="lb-pct" style="color:${col.cor}">${item.pct}%</div>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('[data-jump]').forEach(e=>e.addEventListener('click',()=>{
+    setFltCol(e.dataset.jump);
+    setTimeout(()=>{const s=document.getElementById(`cs-${e.dataset.jump}`);s&&s.scrollIntoView({behavior:'smooth',block:'start'});},100);
+  }));
+}
+
+// ═══════════════════════════════════════════════════════
+// RENDER TAREFAS
+// ═══════════════════════════════════════════════════════
+function setFltCol(val){
+  FLT_COL=val;
+  document.querySelectorAll('#tabs-col .tab').forEach(t=>{
+    const isA=t.dataset.col===val;
+    t.classList.toggle('active',isA);
+    const col=COLLABS[val];
+    t.style.background=isA?(col?col.cor:'#1a1e2a'):'';
+    t.style.borderColor=isA?'transparent':'';
+  });
+  renderTarefas();
+}
+
+function renderTarefas(){
+  const wrap=document.getElementById('t-content');if(!wrap)return;
+  const toShow=FLT_COL==='all'?CIDS:[FLT_COL];
+  wrap.innerHTML='';
+  toShow.forEach(cid=>{
+    const col=COLLABS[cid];
+    const xp=calcXP(cid),lv=getLv(xp);
+    const{done,total,pct}=calcComp(cid);
+    const badges=getBadges(cid);
+    const mDone=isDone(cid,'month_sep');
+    const canEdit=CUR_USER==='gestor'||CUR_USER===cid;
+
+    const wHTML=WEEKS.map(w=>{
+      const isCur=w.num===CUR_WK,isDn=wkDone(cid,w.num),isPast=w.num<CUR_WK;
+      const dc=WEEKLY_TASKS.filter(t=>isDone(cid,`week_${w.num}_${t.id}`)).length;
+      const eKey=`${cid}-${w.num}`,isExp=isCur||isDn||WK_EXP[eKey];
+      const sb=isDn?`<span class="wsbadge wsb-done">✓ Completa</span>`:
+               isCur?`<span class="wsbadge wsb-current">◉ Atual</span>`:
+               isPast?`<span class="wsbadge wsb-past">⚠ Pendente</span>`:
+               `<span class="wsbadge wsb-future">${dc}/3</span>`;
+      const tRows=WEEKLY_TASKS.map(t=>{
+        const d=isDone(cid,`week_${w.num}_${t.id}`);
+        const ro=!canEdit?' readonly':'';
+        return `<div class="task-item${d?' done':''}${ro}" data-c="${cid}" data-k="week_${w.num}_${t.id}">
+          <div class="tcb"></div><span class="ticon">${t.icon}</span>
+          <span class="tlabel">${t.label}</span><span class="txp">+${XP_T} XP</span>
+        </div>`;
+      }).join('');
+      return `<div class="week-card${isCur?' is-current':''}${isDn?' is-done':''}" style="--accent:${col.cor}">
+        <div class="week-hdr" data-ek="${eKey}">
+          <div style="flex:1"><div class="week-title">Semana ${w.num}</div><div class="week-range">${w.range}</div></div>
+          ${sb}<div class="week-score" style="color:${isDn?'#16a34a':col.cor}">${dc}/3</div>
+        </div>
+        <div class="week-body${isExp?'':' collapsed'}">${tRows}
+          <div class="wpbar-wrap"><div class="wpbar" style="width:${Math.round(dc/3*100)}%"></div></div>
+        </div>
+      </div>`;
+    }).join('');
+
+    const bHTML=badges.length?`<div class="badges-row">${badges.map(b=>`<span class="badge-chip">${b.icon} ${b.label}</span>`).join('')}</div>`:'';
+    const mRo=!canEdit?' readonly':'';
+    const sec=document.createElement('div');sec.className='collab-section';sec.id=`cs-${cid}`;
+    sec.innerHTML=`
+      <div class="collab-header-card" style="--accent:${col.cor}">
+        <div class="ring-wrap">${svgRing(pct,col.cor)}<div class="ring-emoji">${col.emoji}</div></div>
+        <div class="c-info">
+          <div class="c-name">${col.nome}</div>
+          <div class="c-lvbadge" style="background:${lv.bg};color:${lv.color}">${lv.icon} ${lv.name}</div>
+          <div class="xp-row"><span class="xp-lbl">XP acumulado</span><span class="xp-val" style="color:${col.cor}">${xp} XP</span></div>
+          <div class="xp-bar-wrap"><div class="xp-bar-fill" style="width:${getXPPct(xp)}%"></div></div>
+          <div class="xp-next">${getNextXP(xp)>0?`Próximo nível: faltam ${getNextXP(xp)} XP`:'🏆 Nível máximo!'}</div>
+        </div>
+        <div class="c-stats">
+          <div class="stat-box"><div class="stat-num">${done}/${total}</div><div class="stat-lbl">Tarefas</div></div>
+          <div class="stat-box"><div class="stat-num">${pct}%</div><div class="stat-lbl">do Mês</div></div>
+        </div>
+        ${bHTML}
+      </div>
+      <div class="tasks-body">
+        <div class="month-card">
+          <div class="month-card-hdr"><span style="font-size:16px">📂</span>
+            <div class="month-card-title">Início do Mês — ${MON_NAME} ${CUR_YEAR}</div>
+            <div class="month-card-status">${mDone?'✅ Concluído':'⏳ Pendente'}</div>
+          </div>
+          <div class="month-card-body">
+            <div class="task-item${mDone?' done':''}${mRo}" data-c="${cid}" data-k="month_sep">
+              <div class="tcb"></div><span class="ticon">📂</span>
+              <span class="tlabel">Separar docs para agendamento</span><span class="txp">+${XP_T} XP</span>
+            </div>
+          </div>
+        </div>
+        <div class="weeks-grid">${wHTML}</div>
+      </div>`;
+    wrap.appendChild(sec);
+  });
+
+  wrap.querySelectorAll('.task-item:not(.readonly)').forEach(el=>{
+    el.addEventListener('click',async()=>{
+      const{c,k}=el.dataset;
+      const wm=k.match(/^week_(\d+)_/),wn=wm?+wm[1]:null;
+      const wasDone=wn?wkDone(c,wn):false,wasM=calcComp(c).pct===100;
+      if(!el.classList.contains('done')) floatXP(el);
+      const ok=await toggle(c,k,false);
+      if(ok){
+        renderLB();renderTarefas();
+        if(!wasDone&&wn&&wkDone(c,wn)) confetti(50);
+        if(!wasM&&calcComp(c).pct===100) setTimeout(()=>confetti(120),500);
+      }
+    });
+  });
+  wrap.querySelectorAll('[data-ek]').forEach(hdr=>{
+    hdr.addEventListener('click',e=>{
+      if(e.target.closest('.task-item')) return;
+      const k=hdr.dataset.ek,body=hdr.nextElementSibling;
+      if(!body) return;
+      body.classList.toggle('collapsed')?delete WK_EXP[k]:(WK_EXP[k]=1);
+    });
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// RENDER CARTEIRA
+// ═══════════════════════════════════════════════════════
+function renderCarteira(){
+  const wrap=document.getElementById('ct-content');if(!wrap)return;
+  wrap.innerHTML='';
+  const cols=FLT_CART==='all'?CIDS:[FLT_CART];
+  let any=false;
+  cols.forEach(cid=>{
+    const col=COLLABS[cid];
+    const condos=col.condos.filter(n=>FLT_AGEND==='all'||AGEND_LU[n]===FLT_AGEND);
+    if(!condos.length) return;
+    any=true;
+    const vc=condos.filter(n=>VALORE_SET.has(n)).length;
+    const sec=document.createElement('div');sec.className='section';
+    sec.innerHTML=`<div class="section-header"><div class="section-pill" style="background:${col.cor}">${col.nome}</div><div class="section-meta">${condos.length} conds · ${vc} Valore · ${condos.length-vc} Síndico</div></div><div class="grid" id="cg-${cid}"></div>`;
+    wrap.appendChild(sec);
+    const grid=sec.querySelector(`#cg-${cid}`);
+    const canEdit=CUR_USER==='gestor'||CUR_USER===cid;
+    condos.forEach(name=>{
+      const{done,total,pct}=calcCtComp(cid,name);
+      const resp=AGEND_LU[name]||null;
+      const vb=VALORE_SET.has(name)?`<span class="cbadge cb-valore">● Valore</span>`:`<span class="cbadge cb-sindico">○ Síndico</span>`;
+      const ab=resp?`<span class="cbadge ${AGEND_CFG[resp].cls}">${AGEND_CFG[resp].lbl}</span>`:'';
+      const rows=CARTEIRA_TASKS.map(t=>{
+        const ck=ctKey(name,t.id),d=isCDone(cid,ck);
+        const ro=!canEdit?' readonly':'';
+        return `<div class="ctask${d?' done':''}${ro}" data-col="${cid}" data-ck="${ck}"><div class="ccb"></div><span style="font-size:11px">${t.icon}</span><span class="ctask-label">${t.label}</span></div>`;
+      }).join('');
+      const card=document.createElement('div');
+      card.className='ccard';card.style.setProperty('--accent',col.cor);
+      card.innerHTML=`<div class="ccard-top"><div class="ccard-name">${name}</div><div class="ccard-badges">${vb}${ab}</div></div><div class="ctasks">${rows}</div><div class="cpbar-wrap"><div class="cpbar-label"><span>Progresso</span><span>${done}/${total}</span></div><div class="cpbar"><div class="cpbar-fill" style="width:${pct}%"></div></div></div>`;
+      grid.appendChild(card);
+    });
+  });
+  if(!any) wrap.innerHTML=`<div class="empty-state">Nenhum condomínio para essa combinação de filtros.</div>`;
+  wrap.querySelectorAll('.ctask:not(.readonly)').forEach(el=>{
+    el.addEventListener('click',async()=>{
+      const ok=await toggle(el.dataset.col,el.dataset.ck,true);
+      if(ok) renderCarteira();
+    });
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// RENDER GESTOR
+// ═══════════════════════════════════════════════════════
+function renderGestor(){
+  const wrap=document.getElementById('g-content');if(!wrap)return;
+  const wThs=WEEKS.map(w=>`<th>${w.num===CUR_WK?'◉ ':''}Sem ${w.num}<br><span style="font-size:9px;font-weight:400">${w.start}–${w.end}</span></th>`).join('');
+  const rows=CIDS.map(cid=>{
+    const col=COLLABS[cid],{pct,done,total}=calcComp(cid),xp=calcXP(cid),lv=getLv(xp);
+    const mD=isDone(cid,'month_sep');
+    const wCells=WEEKS.map(w=>{
+      const dc=WEEKLY_TASKS.filter(t=>isDone(cid,`week_${w.num}_${t.id}`)).length;
+      return `<td><span class="wchip ${dc===3?'wc-done':dc>0?'wc-partial':'wc-empty'}">${dc}/3</span></td>`;
+    }).join('');
+    const semCls=pct===100?'sem-green':pct>=50?'sem-yellow':'sem-red';
+    const semLbl=pct===100?'🟢 Completo':pct>=50?'🟡 Andamento':'🔴 Atenção';
+    return `<tr>
+      <td><div class="cn-cell"><div class="cn-emoji">${col.emoji}</div><div><div class="cn-name">${col.nome}</div><div class="cn-lv">${lv.icon} ${lv.name} · ${xp} XP</div></div></div></td>
+      <td><span class="wchip ${mD?'wc-done':'wc-empty'}">${mD?'✅':'⏳'}</span></td>
+      ${wCells}
+      <td><strong style="font-size:15px;color:${col.cor};font-family:'DM Mono',monospace">${done}/${total}</strong></td>
+      <td><strong style="font-size:15px;color:${col.cor};font-family:'DM Mono',monospace">${pct}%</strong></td>
+      <td><span class="sem ${semCls}">${semLbl}</span></td>
+    </tr>`;
+  }).join('');
+  const lrt=lastRT.when?`Última atualização: <strong>${COLLABS[lastRT.who]?.nome||lastRT.who}</strong> às ${lastRT.when.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`:'Aguardando atualizações em tempo real...';
+  const bars=CIDS.map(cid=>{const col=COLLABS[cid],{pct}=calcComp(cid);return`<div class="gbar-row"><div class="gbar-name" style="color:${col.cor}">${col.emoji} ${col.nome}</div><div class="gbar-wrap"><div class="gbar-fill" style="width:${pct}%;background:${col.cor}"></div></div><div class="gbar-pct" style="color:${col.cor}">${pct}%</div></div>`;}).join('');
+  wrap.innerHTML=`
+    <div class="gestor-panel">
+      <div class="gestor-panel-hdr">
+        <div style="font-size:16px">🎯</div>
+        <div class="gph-title">Painel do Gestor — ${MON_NAME} ${CUR_YEAR}</div>
+        <div class="gph-live"><div class="gph-dot"></div><span class="gph-label">Ao vivo</span></div>
+        <div class="gph-time">${lrt}</div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="gestor-table">
+          <thead><tr><th>Colaborador</th><th>📂 Início Mês</th>${wThs}<th>Total</th><th>%</th><th>🚦 Status</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      ${bars}
+    </div>
+    <div class="leaderboard" id="lb"></div>`;
+  renderLB();
+}
+
+// ═══════════════════════════════════════════════════════
+// MAIN VIEW SWITCHER
+// ═══════════════════════════════════════════════════════
+function renderView(view){
+  CUR_VIEW=view;
+  document.querySelectorAll('#main-nav .nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
+  const C=document.getElementById('app-content');
+
+  if(view==='tarefas'){
+    C.innerHTML=`
+      <div class="leaderboard" id="lb"></div>
+      <div class="filter-block">
+        <div class="fgl">Filtro — Colaborador</div>
+        <div class="tabs" id="tabs-col">
+          <div class="tab active" data-col="all" style="background:#1a1e2a"><span class="dot" style="background:#fff"></span>Todos</div>
+          ${CIDS.map(id=>`<div class="tab" data-col="${id}"><span class="dot" style="background:${COLLABS[id].cor}"></span>${COLLABS[id].nome}</div>`).join('')}
+        </div>
+      </div>
+      <div id="t-content"></div>`;
+    // restore active tab
+    document.querySelectorAll('#tabs-col .tab').forEach(t=>{
+      if(t.dataset.col===FLT_COL){t.classList.add('active');const col=COLLABS[FLT_COL];t.style.background=col?col.cor:'#1a1e2a';t.style.borderColor='transparent';}
+    });
+    document.getElementById('tabs-col').addEventListener('click',e=>{
+      const t=e.target.closest('[data-col]');if(!t)return;
+      if(CUR_USER!=='gestor'&&t.dataset.col!=='all'&&t.dataset.col!==CUR_USER){
+        toast(`Você está vendo a carteira de ${COLLABS[t.dataset.col].nome}. Só pode editar as suas próprias tarefas 😊`,'info');
+      }
+      setFltCol(t.dataset.col);
+    });
+    renderLB();renderTarefas();
+
+  } else if(view==='carteira'){
+    C.innerHTML=`
+      <div class="legend">
+        <div class="legend-title">Legenda</div>
+        <div class="legend-items">
+          <div class="legend-item"><div class="ldot" style="background:#6d28d9"></div>Valore agenda</div>
+          <div class="legend-item"><div class="ldot" style="background:#94a3b8"></div>Síndico agenda</div>
+          <div class="legend-item">📂 Separar docs</div><div class="legend-item">📝 Lançar ERP</div>
+          <div class="legend-item">📋 Cobrar notas</div><div class="legend-item">🔄 Conciliação</div>
+        </div>
+      </div>
+      <div class="filter-block"><div class="fgl">Filtro — Colaborador</div>
+        <div class="tabs" id="tabs-cart">
+          <div class="tab active" data-vc="all" style="background:#1a1e2a"><span class="dot" style="background:#fff"></span>Todos</div>
+          ${CIDS.map(id=>`<div class="tab" data-vc="${id}"><span class="dot" style="background:${COLLABS[id].cor}"></span>${COLLABS[id].nome}</div>`).join('')}
+        </div>
+      </div>
+      <div class="filter-block"><div class="fgl">Filtro — Responsável Agendamento</div>
+        <div class="tabs" id="tabs-ag">
+          <div class="tab active" data-va="all" style="background:#1a1e2a"><span class="dot" style="background:#fff"></span>Todos</div>
+          <div class="tab" data-va="pedro"><span class="dot" style="background:#2563eb"></span>Pedro</div>
+          <div class="tab" data-va="cristiano"><span class="dot" style="background:#7c3aed"></span>Cristiano</div>
+          <div class="tab" data-va="monica"><span class="dot" style="background:#db2777"></span>Monica</div>
+        </div>
+      </div>
+      <div id="ct-content"></div>`;
+    const agColors={pedro:'#2563eb',cristiano:'#7c3aed',monica:'#db2777'};
+    function setTab(group,attr,val){
+      document.querySelectorAll(`#${group} .tab`).forEach(t=>{
+        const isA=t.dataset[attr]===val;
+        t.classList.toggle('active',isA);
+        t.style.cssText=isA?`background:${COLLABS[val]?.cor||agColors[val]||'#1a1e2a'};color:#fff;border-color:transparent`:'';
+      });
+    }
+    document.getElementById('tabs-cart').addEventListener('click',e=>{const t=e.target.closest('[data-vc]');if(!t)return;FLT_CART=t.dataset.vc;setTab('tabs-cart','vc',FLT_CART);renderCarteira();});
+    document.getElementById('tabs-ag').addEventListener('click',e=>{const t=e.target.closest('[data-va]');if(!t)return;FLT_AGEND=t.dataset.va;setTab('tabs-ag','va',FLT_AGEND);renderCarteira();});
+    renderCarteira();
+
+  } else if(view==='gestor'){
+    C.innerHTML=`<div id="g-content"></div>`;
+    renderGestor();
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// LOGIN & SETUP
+// ═══════════════════════════════════════════════════════
+function enterApp(user){
+  CUR_USER=user;
+  FLT_COL=user==='gestor'?'all':user;
+  const col=COLLABS[user];
+  document.getElementById('uchip-name').textContent=col?col.nome:'Gestor';
+  document.getElementById('uchip-dot').style.background=col?col.cor:'#1a1e2a';
+  document.getElementById('nav-gestor').style.display=user==='gestor'?'':'none';
+  document.getElementById('screen-login').style.display='none';
+  document.getElementById('screen-app').style.display='';
+  renderView(user==='gestor'?'gestor':'tarefas');
+}
+
+document.querySelectorAll('.login-card').forEach(c=>c.addEventListener('click',()=>enterApp(c.dataset.user)));
+document.getElementById('main-nav').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(b)renderView(b.dataset.view);});
+
+async function checkSetup(){
+  document.getElementById('loading').style.display='flex';
+  const{error}=await db.from('task_completions').select('id').limit(1);
+  document.getElementById('loading').style.display='none';
+  if(error){toast('Tabela ainda não encontrada. Execute o SQL e tente novamente.','error');}
+  else{
+    await loadAll();startRealtime();
+    document.getElementById('screen-setup').style.display='none';
+    document.getElementById('screen-login').style.display='flex';
+    toast('Banco conectado com sucesso! ✅','success');
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════════
+(async()=>{
+  const{error}=await db.from('task_completions').select('id').limit(1);
+  document.getElementById('loading').style.display='none';
+  if(error){
+    document.getElementById('screen-setup').style.display='flex';
+  } else {
+    await loadAll();startRealtime();
+    document.getElementById('screen-login').style.display='flex';
+  }
+})();
+</script>
+</body>
+</html>
