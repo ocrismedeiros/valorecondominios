@@ -1,8 +1,9 @@
 // Substituto do módulo "nucleo" do Builder do Núcleo de I.A.
 // Mantém a mesma interface: db.colecao<T>("nome").listar / criar / atualizar / remover.
 //
-// Se VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY estiverem definidas, usa o Supabase
-// (tabela "registros", ver supabase/schema.sql). Senão, salva no localStorage do navegador.
+// Se VITE_SUPABASE_URL e VITE_SUPABASE_KEY estiverem definidas, usa o Supabase
+// (tabela "registros", ver supabase/schema.sql) com login por e-mail e senha.
+// Senão, salva no localStorage do navegador (modo local, só para testes).
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 type Base = { id: string; criado_em: string; atualizado_em: string };
@@ -107,8 +108,45 @@ function colecaoSupabase<T extends Base>(sb: SupabaseClient, nome: string): Cole
 }
 
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const chave = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+const chave = import.meta.env.VITE_SUPABASE_KEY as string | undefined;
 const supabase = url && chave ? createClient(url, chave) : null;
+
+// Login da equipe. No modo local não há contas: qualquer um entra.
+export const auth = {
+  local: !supabase,
+
+  // E-mail de quem está logado e liberado na equipe, ou null.
+  async usuarioAtual(): Promise<string | null> {
+    if (!supabase) return null;
+    const { data } = await supabase.auth.getSession();
+    const email = data.session?.user.email;
+    if (!email) return null;
+    return (await estaNaEquipe(supabase, email)) ? email : null;
+  },
+
+  async entrar(email: string, senha: string): Promise<void> {
+    if (!supabase) return;
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password: senha });
+    if (error) {
+      if (error.message.toLowerCase().includes("not confirmed")) throw new Error("Confirme o e-mail antes de entrar.");
+      if (error.status === 400) throw new Error("E-mail ou senha incorretos.");
+      throw new Error("Não foi possível entrar. Confira a internet e tente de novo.");
+    }
+    if (!(await estaNaEquipe(supabase, email))) {
+      await supabase.auth.signOut();
+      throw new Error("Este e-mail não está liberado. Peça ao responsável para incluir você na equipe.");
+    }
+  },
+
+  async sair(): Promise<void> {
+    if (supabase) await supabase.auth.signOut();
+  },
+};
+
+async function estaNaEquipe(sb: SupabaseClient, email: string): Promise<boolean> {
+  const { data, error } = await sb.from("equipe").select("email").eq("email", email.trim().toLowerCase()).maybeSingle();
+  return !error && !!data;
+}
 
 export const db = {
   colecao<T extends Base>(nome: string): Colecao<T> {

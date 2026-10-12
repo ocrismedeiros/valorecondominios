@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Building, CalendarDays, ClipboardList, LayoutDashboard, LayoutGrid, LogOut, Plus, RefreshCw, Ticket, Wrench, type LucideIcon } from "lucide-react";
-import { db } from "./nucleo";
+import { auth, db } from "./nucleo";
 import { periodicidades, type CampoManutencao, type CampoPredio, type Config, type Manutencao, type Periodicidade, type Predio, type Situacao, type SituacaoOrcamento } from "./lib/tipos";
 import { formatarData, hojeISO, somarDias } from "./lib/datas";
 import { planoPadrao } from "./lib/plano";
@@ -364,8 +364,23 @@ function Sistema({ onSair }: { onSair: () => void }) {
 }
 
 export default function App() {
-  const [entrou, setEntrou] = useState(false);
+  // undefined: ainda conferindo se já há alguém logado neste navegador.
+  const [usuario, setUsuario] = useState<string | null | undefined>(auth.local ? null : undefined);
 
-  if (!entrou) return <AcessoEquipe onEntrar={() => setEntrou(true)} />;
-  return <Sistema onSair={() => setEntrou(false)} />;
+  useEffect(() => {
+    if (!auth.local) auth.usuarioAtual().then(setUsuario, () => setUsuario(null));
+  }, []);
+
+  async function sair() {
+    await auth.sair();
+    setUsuario(null);
+  }
+
+  if (usuario === undefined) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-neutral-950 text-sm text-neutral-400">Abrindo...</div>
+    );
+  }
+  if (usuario === null) return <AcessoEquipe onEntrar={(email) => setUsuario(email)} />;
+  return <Sistema onSair={sair} />;
 }
